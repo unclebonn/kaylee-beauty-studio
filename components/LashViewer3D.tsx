@@ -6,6 +6,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { ArrowRight, Orbit, X } from 'lucide-react'
+import { formatPriceVnd } from '@/lib/booking'
 
 type Locale = 'vi' | 'en'
 
@@ -257,7 +258,7 @@ export default function LashViewerModal({ service, locale, selected = false, onT
         <div className="mt-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-camel-500">{locale === 'vi' ? 'Giá dịch vụ' : 'Price'}</p>
-            <p className="font-serif text-xl font-semibold text-camel-900">{service.price}</p>
+            <p className="font-serif text-xl font-semibold text-camel-900">{formatPriceVnd(service.price)}</p>
           </div>
           {onToggleSelect ? (
             <button type="button" onClick={onToggleSelect} className={`rounded-full px-5 py-3 text-sm font-bold transition ${selected ? 'border border-camel-300 bg-camel-100 text-camel-800 hover:bg-camel-200' : 'bg-camel-800 text-camel-50 hover:bg-camel-700'}`}>{selected ? (locale === 'vi' ? 'Bỏ chọn dịch vụ' : 'Remove service') : (locale === 'vi' ? 'Chọn dịch vụ này' : 'Choose this service')}</button>
