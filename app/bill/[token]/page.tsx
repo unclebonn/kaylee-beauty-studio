@@ -1,12 +1,36 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { CalendarDays, CheckCircle2, Clock3, Phone, User } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
 import { formatPriceVnd } from '@/lib/booking'
 
 export const dynamic = 'force-dynamic'
 
+// Backend NestJS (kaylee-api). Trên Vercel set biến API_URL (VD: http://<vps>:3001).
+const API_URL = (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '')
+
 type ServiceLike = { vi?: string; price?: string }
+
+type Bill = {
+  id: number
+  customerName: string
+  phone: string // đã được API che (VD: 0912•••678)
+  services: ServiceLike[]
+  totalPrice: number
+  bookingDate: string
+  bookingTime: string
+  status: string
+}
+
+async function getBill(token: string): Promise<Bill | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/bill/${token}`, { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json().catch(() => null)
+    return data?.bill ?? null
+  } catch {
+    return null
+  }
+}
 
 function formatMoney(value: number) {
   return `${value.toLocaleString('vi-VN')}₫`
@@ -16,20 +40,15 @@ function billNumber(id: number) {
   return `#${String(id).padStart(6, '0')}`
 }
 
-function maskPhone(phone: string) {
-  if (phone.length < 7) return phone
-  return `${phone.slice(0, 4)}•••${phone.slice(-3)}`
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
   const { token } = await params
-  const booking = await prisma.booking.findUnique({ where: { shareToken: token }, select: { id: true } })
-  return { title: booking ? `Hóa đơn ${billNumber(booking.id)} — Kaylee Beauty Studio` : 'Hóa đơn — Kaylee Beauty Studio' }
+  const bill = await getBill(token)
+  return { title: bill ? `Hóa đơn ${billNumber(bill.id)} — Kaylee Beauty Studio` : 'Hóa đơn — Kaylee Beauty Studio' }
 }
 
 export default async function BillPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const booking = await prisma.booking.findUnique({ where: { shareToken: token } })
+  const booking = await getBill(token)
   if (!booking) notFound()
 
   const services = (Array.isArray(booking.services) ? booking.services : []) as ServiceLike[]
@@ -65,7 +84,7 @@ export default async function BillPage({ params }: { params: Promise<{ token: st
           <p className="flex items-center gap-2.5">
             <Phone size={15} className="shrink-0 text-camel-500" />
             <span className="w-24 shrink-0 text-camel-600">SĐT</span>
-            <span className="text-camel-800">{booking.phone ? maskPhone(booking.phone) : '—'}</span>
+            <span className="text-camel-800">{booking.phone || '—'}</span>
           </p>
           <p className="flex items-center gap-2.5">
             <CalendarDays size={15} className="shrink-0 text-camel-500" />
